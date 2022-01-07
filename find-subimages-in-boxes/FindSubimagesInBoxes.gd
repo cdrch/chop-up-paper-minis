@@ -24,7 +24,7 @@ var inner_loops_discard := 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	image_directory.open("res://test_images")
+	image_directory.open("res://pages")
 	image_directory.list_dir_begin(true)
 	thread = Thread.new()
 	thread.start(self, "_thread_function")
@@ -38,7 +38,7 @@ func _thread_function():
 	var next_image = image_directory.get_next()
 	while next_image != "":
 		if not next_image.ends_with("import"):
-			images.append(load("res://test_images/" + next_image))
+			images.append(load("res://pages/" + next_image))
 			print(next_image)
 		next_image = image_directory.get_next()
 	# Call function
