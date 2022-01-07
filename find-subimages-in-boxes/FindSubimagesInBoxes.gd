@@ -5,8 +5,10 @@ var FUZZY_MATCH_DIFF = 0.1
 # Declare member variables here. Examples:
 # var a: int = 2
 # var b: String = "text"
-var test_image = preload("res://test_images/page-07.png")
+#var test_image = preload("res://test_images/page-07.png")
 #var test_image = preload("res://test_images/testtiny.png")
+var images = []
+var image_directory = Directory.new()
 var thread
 var progress := Vector2(0,0)
 var done = false
@@ -22,6 +24,8 @@ var inner_loops_discard := 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	image_directory.open("res://test_images")
+	image_directory.list_dir_begin(true)
 	thread = Thread.new()
 	thread.start(self, "_thread_function")
 	pass # Replace with function body.
@@ -30,11 +34,25 @@ func _exit_tree() -> void:
 	thread.wait_to_finish()
 
 func _thread_function():
-	# Load image
+	# Load images
+	var next_image = image_directory.get_next()
+	while next_image != "":
+		if not next_image.ends_with("import"):
+			images.append(load("res://test_images/" + next_image))
+			print(next_image)
+		next_image = image_directory.get_next()
 	# Call function
-	test_image.lock()
-	_find_some_dang_boxes(test_image, 20, 1500, "user://test")
-	test_image.unlock()
+	for i in images:
+		i.lock()
+		_find_some_dang_boxes(i, 20, 1500, "user://test")
+		i.unlock()
+	print("Done")
+	print(program_timer)
+	print("Outer loop discards: " + str(outer_loops_discard))
+	print("Inner loop discards: " + str(inner_loops_discard))
+	print("V discards: " + str(pixels_discarded_by_v_line_check))
+	print("H discards: " + str(pixels_discarded_by_h_line_check))
+	get_tree().quit()
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -52,14 +70,6 @@ func _find_some_dang_boxes(image: Image, min_box_dimension: int,
 	var iteration_end := Vector2(image.get_width(), image.get_height()) - min_box # exclusive
 	# Iterate over all pixels, y and x, ending at image size limits - min_box
 	_iterate_over_all_pixels(image, box_color, min_box, max_box, path_for_subimages, Vector2(0,0), iteration_end)
-	print("Done")
-	print(program_timer)
-	print("Outer loop discards: " + str(outer_loops_discard))
-	print("Inner loop discards: " + str(inner_loops_discard))
-	print("V discards: " + str(pixels_discarded_by_v_line_check))
-	print("H discards: " + str(pixels_discarded_by_h_line_check))
-	
-	get_tree().quit()
 	pass
 
 
@@ -78,12 +88,12 @@ func _iterate_over_all_pixels(image: Image, box_color: Color, min_box: Vector2,
 			# Else, iterate over all pixels, y and x, starting at +min_box and ending at +max_box or image size limits
 			
 			# Check for at least min_box of valid borders
-			var valid_h_pixels = _valid_consecutive_pixels_horizontal(image, box_color, Vector2(x,y), max_box.x)
+			var valid_h_pixels = _valid_consecutive_pixels_horizontal(image, box_color, Vector2(x,y), min(max_box.x, image.get_width()))
 #			print(valid_h_pixels)
 			if valid_h_pixels < min_box.x:
 				pixels_discarded_by_h_line_check += 1
 				continue
-			var valid_v_pixels = _valid_consecutive_pixels_vertical(image, box_color, Vector2(x,y), max_box.y)
+			var valid_v_pixels = _valid_consecutive_pixels_vertical(image, box_color, Vector2(x,y), min(max_box.y, image.get_height()))
 			if valid_v_pixels < min_box.y:
 				pixels_discarded_by_v_line_check += 1				
 				continue
@@ -220,7 +230,9 @@ func _valid_consecutive_pixels_horizontal(image: Image, color: Color, start: Vec
 	# Start at corner
 	# Go to the right until invalid pixel found, counting as we go
 	var count = 0
-	for x in range(start.x, start.x + max_size + 1):
+	for x in range(start.x, start.x + max_size):
+#		if x >= image.get_width() or start.y >= image.get_height():
+#			print("(" + str(x) + ", " + str(start.y) + ")")
 		if not _fuzzy_match_colors(image.get_pixel(x, start.y),  color):
 			return count
 		count += 1	
@@ -231,7 +243,7 @@ func _valid_consecutive_pixels_vertical(image: Image, color: Color, start: Vecto
 	# Start at corner
 	# Go to the right until invalid pixel found, counting as we go
 	var count = 0
-	for y in range(start.y, start.y + max_size + 1):
+	for y in range(start.y, start.y + max_size):
 		if not _fuzzy_match_colors(image.get_pixel(start.x, y),  color):
 			return count
 		count += 1	
