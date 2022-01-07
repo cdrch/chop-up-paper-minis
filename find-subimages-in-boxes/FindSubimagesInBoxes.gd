@@ -129,7 +129,7 @@ func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimag
 #			print("Here at " + str(Vector2(x, y)))
 			# Else, we have two potential box corners: first_corner and second_corner
 			var second_corner = Vector2(x, y)
-			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner)
+			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner, 0, 0)
 			if move_to_next_pixel:
 				move_to_next_pixel = false
 				return
@@ -138,7 +138,7 @@ func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimag
 	pass
 
 
-func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2) -> void:
+func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2, skip_x: int, skip_y: int) -> void:
 	# Get the four side values
 	var left := min(first_corner.x, second_corner.x)
 	var right := max(first_corner.x, second_corner.x)
@@ -152,7 +152,7 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 #		if not _fuzzy_match_colors(image.get_pixel(left, y),  box_color):
 #			return
 	# Check right
-	for y in range(top, bottom+1):
+	for y in range(top + skip_y, bottom+1):
 		if not _fuzzy_match_colors(image.get_pixel(right, y),  box_color):
 			return
 	# Check top
@@ -160,7 +160,7 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 #		if not _fuzzy_match_colors(image.get_pixel(x, top),  box_color):
 #			return
 	# Check bottom
-	for x in range(left, right+1):
+	for x in range(left + skip_x, right+1):
 		if not _fuzzy_match_colors(image.get_pixel(x, bottom),  box_color):
 			return
 	# If none are false, we have a valid box outline
