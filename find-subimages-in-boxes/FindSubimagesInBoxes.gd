@@ -1,7 +1,7 @@
 extends Node2D
 
 
-var FUZZY_MATCH_DIFF = 0.1
+var FUZZY_MATCH_DIFF = 0.34 #0.1
 # Declare member variables here. Examples:
 # var a: int = 2
 # var b: String = "text"
@@ -44,7 +44,7 @@ func _thread_function():
 	# Call function
 	for i in images:
 		i.lock()
-		_find_some_dang_boxes(i, 20, 1500, "user://test")
+		_find_some_dang_boxes(i, 150, 16000, "user://test")
 		i.unlock()
 	print("Done")
 	print(program_timer)
@@ -201,6 +201,7 @@ func _save_subimage(image: Image, path_for_subimages: String, left: int, right: 
 	# Delete the subimage from the working image, excluding the bordering box
 	_delete_subimage_from_working_image(image, left, right, top, bottom)
 	# Debug visualization
+#	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
 	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
 	image_counter += 1
 	
