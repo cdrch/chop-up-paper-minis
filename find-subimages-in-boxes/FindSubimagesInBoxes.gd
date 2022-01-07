@@ -2,6 +2,7 @@ extends Node2D
 
 
 var FUZZY_MATCH_DIFF = 0.34 #0.1
+var SKIPPABLE_PIXEL_COUNT = 8
 # Declare member variables here. Examples:
 # var a: int = 2
 # var b: String = "text"
@@ -24,7 +25,7 @@ var inner_loops_discard := 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	image_directory.open("res://pages")
+	image_directory.open("res://trouble_pages")
 	image_directory.list_dir_begin(true)
 	thread = Thread.new()
 	thread.start(self, "_thread_function")
@@ -38,7 +39,7 @@ func _thread_function():
 	var next_image = image_directory.get_next()
 	while next_image != "":
 		if not next_image.ends_with("import"):
-			images.append(load("res://pages/" + next_image))
+			images.append(load("res://trouble_pages/" + next_image))
 			print(next_image)
 		next_image = image_directory.get_next()
 	# Call function
@@ -129,7 +130,8 @@ func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimag
 #			print("Here at " + str(Vector2(x, y)))
 			# Else, we have two potential box corners: first_corner and second_corner
 			var second_corner = Vector2(x, y)
-			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner, 0, 0)
+			var skip_x = _check_bottom_border(image, box_color, first_corner, second_corner)
+			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner, skip_x)
 			if move_to_next_pixel:
 				move_to_next_pixel = false
 				return
@@ -138,7 +140,26 @@ func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimag
 	pass
 
 
-func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2, skip_x: int, skip_y: int) -> void:
+func _check_bottom_border(image: Image, box_color: Color, first_corner: Vector2, second_corner: Vector2) -> int:
+	# Get the four side values
+	var left := min(first_corner.x, second_corner.x)
+	var right := max(first_corner.x, second_corner.x)
+	var top := min(first_corner.y, second_corner.y)
+	var bottom := max(first_corner.y, second_corner.y)
+	var count = 0
+	var skipped = 0
+	for x in range(left, right+1):
+		if not _fuzzy_match_colors(image.get_pixel(x, bottom),  box_color):
+			skipped += 1
+			if skipped > SKIPPABLE_PIXEL_COUNT:
+				return count - skipped
+		else:
+			skipped = 0
+		count += 1
+	return count
+
+
+func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2, skip_x: int) -> void:
 	# Get the four side values
 	var left := min(first_corner.x, second_corner.x)
 	var right := max(first_corner.x, second_corner.x)
@@ -152,17 +173,27 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 #		if not _fuzzy_match_colors(image.get_pixel(left, y),  box_color):
 #			return
 	# Check right
-	for y in range(top + skip_y, bottom+1):
+	var skipped = 0
+	for y in range(top, bottom+1):
 		if not _fuzzy_match_colors(image.get_pixel(right, y),  box_color):
-			return
+			skipped += 1
+			if skipped > SKIPPABLE_PIXEL_COUNT:
+				return
+		else:
+			skipped = 0
 	# Check top
 #	for x in range(left, right+1):
 #		if not _fuzzy_match_colors(image.get_pixel(x, top),  box_color):
 #			return
 	# Check bottom
+	skipped = 0
 	for x in range(left + skip_x, right+1):
 		if not _fuzzy_match_colors(image.get_pixel(x, bottom),  box_color):
-			return
+			skipped += 1
+			if skipped > SKIPPABLE_PIXEL_COUNT:
+				return
+		else:
+			skipped = 0
 	# If none are false, we have a valid box outline
 	# Check the inside for valid content
 	print("box border valid")
@@ -231,11 +262,14 @@ func _valid_consecutive_pixels_horizontal(image: Image, color: Color, start: Vec
 	# Start at corner
 	# Go to the right until invalid pixel found, counting as we go
 	var count = 0
+	var skipped = 0
 	for x in range(start.x, start.x + max_size):
-#		if x >= image.get_width() or start.y >= image.get_height():
-#			print("(" + str(x) + ", " + str(start.y) + ")")
 		if not _fuzzy_match_colors(image.get_pixel(x, start.y),  color):
-			return count
+			skipped += 1
+			if skipped > SKIPPABLE_PIXEL_COUNT:
+				return count - skipped
+		else:
+			skipped = 0
 		count += 1	
 	return count # should be equal to max_size
 
@@ -244,9 +278,14 @@ func _valid_consecutive_pixels_vertical(image: Image, color: Color, start: Vecto
 	# Start at corner
 	# Go to the right until invalid pixel found, counting as we go
 	var count = 0
+	var skipped = 0
 	for y in range(start.y, start.y + max_size):
 		if not _fuzzy_match_colors(image.get_pixel(start.x, y),  color):
-			return count
+			skipped += 1
+			if skipped > SKIPPABLE_PIXEL_COUNT:
+				return count - skipped
+		else:
+			skipped = 0
 		count += 1	
 	return count # should be equal to max_size
 
