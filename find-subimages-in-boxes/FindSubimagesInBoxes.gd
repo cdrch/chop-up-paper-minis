@@ -15,7 +15,7 @@ var progress := Vector2(0,0)
 var done = false
 var image_counter = 1
 var move_to_next_pixel = false
-var list_of_centers = []
+var list_of_rects = []
 
 # Debug
 var program_timer := 0.0
@@ -47,7 +47,7 @@ func _thread_function():
 	for i in images:
 		i.lock()
 		_find_some_dang_boxes(i, 150, 16000, "user://test")
-		list_of_centers = []
+		list_of_rects = []
 		i.unlock()
 	print("Done")
 	print(program_timer)
@@ -149,8 +149,8 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 	
 	# Ensure this area is not already used
 	var rect_to_check = Rect2(left, top, right - left, bottom - top)
-	for center in list_of_centers:
-		if rect_to_check.has_point(center):
+	for rect in list_of_rects:
+		if rect_to_check.intersects(rect, false):
 			return
 	
 #	print(str(left) + "|" + str(right) + "|" + str(top) + "|" + str(bottom))
@@ -198,7 +198,7 @@ func _check_that_box_content_is_valid(image: Image,	path_for_subimages: String, 
 			if image.get_pixel(x, y) == Color.transparent:
 				return
 	# Image is valid!
-	list_of_centers.append(Vector2((left+right)/2, (top+bottom)/2))
+	list_of_rects.append(Rect2(left+1, top+1, right-left-2, bottom-top-2))
 	move_to_next_pixel = true
 	# Save the subimage, including the bordering box
 	_save_subimage(image, path_for_subimages, left, right, top, bottom)
@@ -219,10 +219,10 @@ func _save_subimage(image: Image, path_for_subimages: String, left: int, right: 
 	print(path_for_subimages + "/" + str(image_counter) + ".png")
 	
 	# Delete the subimage from the working image, excluding the bordering box
-	_delete_subimage_from_working_image(image, left, right, top, bottom)
+#	_delete_subimage_from_working_image(image, left, right, top, bottom)
 	# Debug visualization
 #	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
-	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
+#	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
 	image_counter += 1
 	
 	pass
