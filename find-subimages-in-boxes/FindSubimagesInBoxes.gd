@@ -253,6 +253,9 @@ func _valid_consecutive_pixels_horizontal(image: Image, color: Color, start: Vec
 	var count = 0
 	var skipped = 0
 	for x in range(start.x, start.x + max_size):
+		for rect in list_of_rects:
+			if rect.has_point(Vector2(x, start.y)):
+				return count
 		if not _fuzzy_match_colors(image.get_pixel(x, start.y),  color):
 			skipped += 1
 			if skipped > SKIPPABLE_PIXEL_COUNT:
@@ -269,6 +272,9 @@ func _valid_consecutive_pixels_vertical(image: Image, color: Color, start: Vecto
 	var count = 0
 	var skipped = 0
 	for y in range(start.y, start.y + max_size):
+		for rect in list_of_rects:
+			if rect.has_point(Vector2(start.x, y)):
+				return count
 		if not _fuzzy_match_colors(image.get_pixel(start.x, y),  color):
 			skipped += 1
 			if skipped > SKIPPABLE_PIXEL_COUNT:
