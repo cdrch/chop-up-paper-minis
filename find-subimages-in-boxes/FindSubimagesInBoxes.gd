@@ -15,6 +15,7 @@ var progress := Vector2(0,0)
 var done = false
 var image_counter = 1
 var move_to_next_pixel = false
+var list_of_centers = []
 
 # Debug
 var program_timer := 0.0
@@ -25,7 +26,7 @@ var inner_loops_discard := 0
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	image_directory.open("res://trouble_pages")
+	image_directory.open("res://rotated_trouble_pages")
 	image_directory.list_dir_begin(true)
 	thread = Thread.new()
 	thread.start(self, "_thread_function")
@@ -39,13 +40,14 @@ func _thread_function():
 	var next_image = image_directory.get_next()
 	while next_image != "":
 		if not next_image.ends_with("import"):
-			images.append(load("res://trouble_pages/" + next_image))
+			images.append(load("res://rotated_trouble_pages/" + next_image))
 			print(next_image)
 		next_image = image_directory.get_next()
 	# Call function
 	for i in images:
 		i.lock()
 		_find_some_dang_boxes(i, 150, 16000, "user://test")
+		list_of_centers = []
 		i.unlock()
 	print("Done")
 	print(program_timer)
@@ -196,6 +198,7 @@ func _check_that_box_content_is_valid(image: Image,	path_for_subimages: String, 
 			if image.get_pixel(x, y) == Color.transparent:
 				return
 	# Image is valid!
+	list_of_centers.append(Vector2((left+right)/2, (top+bottom)/2))
 	move_to_next_pixel = true
 	# Save the subimage, including the bordering box
 	_save_subimage(image, path_for_subimages, left, right, top, bottom)
@@ -227,8 +230,8 @@ func _save_subimage(image: Image, path_for_subimages: String, left: int, right: 
 
 func _delete_subimage_from_working_image(image: Image, left: int, right: int, top: int, bottom: int) -> void:	
 	# Delete the subimage from the working image, including the bordering box only on the left and right
-	for y in range(top, bottom):
-		for x in range(left, right):
+	for y in range(top+1, bottom):
+		for x in range(left+1, right):
 			image.set_pixel(x, y, Color.transparent)
 	# Proceed to the next iteration	
 	pass
