@@ -130,8 +130,7 @@ func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimag
 #			print("Here at " + str(Vector2(x, y)))
 			# Else, we have two potential box corners: first_corner and second_corner
 			var second_corner = Vector2(x, y)
-			var skip_x = _check_bottom_border(image, box_color, first_corner, second_corner)
-			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner, skip_x)
+			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner)
 			if move_to_next_pixel:
 				move_to_next_pixel = false
 				return
@@ -139,32 +138,19 @@ func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimag
 	
 	pass
 
-
-func _check_bottom_border(image: Image, box_color: Color, first_corner: Vector2, second_corner: Vector2) -> int:
+func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2) -> void:
 	# Get the four side values
 	var left := min(first_corner.x, second_corner.x)
 	var right := max(first_corner.x, second_corner.x)
 	var top := min(first_corner.y, second_corner.y)
 	var bottom := max(first_corner.y, second_corner.y)
-	var count = 0
-	var skipped = 0
-	for x in range(left, right+1):
-		if not _fuzzy_match_colors(image.get_pixel(x, bottom),  box_color):
-			skipped += 1
-			if skipped > SKIPPABLE_PIXEL_COUNT:
-				return count - skipped
-		else:
-			skipped = 0
-		count += 1
-	return count
-
-
-func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2, skip_x: int) -> void:
-	# Get the four side values
-	var left := min(first_corner.x, second_corner.x)
-	var right := max(first_corner.x, second_corner.x)
-	var top := min(first_corner.y, second_corner.y)
-	var bottom := max(first_corner.y, second_corner.y)
+	
+	# Ensure this area is not already used
+	var rect_to_check = Rect2(left, top, right - left, bottom - top)
+	for center in list_of_centers:
+		if rect_to_check.has_point(center):
+			return
+	
 #	print(str(left) + "|" + str(right) + "|" + str(top) + "|" + str(bottom))
 	# Check that each line is valid (image.get_pixel() == box_color) between the perpendicular limits
 	# If any are false, break the check and continue onto the next iteration
@@ -187,7 +173,7 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 #			return
 	# Check bottom
 	skipped = 0
-	for x in range(left + skip_x, right+1):
+	for x in range(left, right+1):
 		if not _fuzzy_match_colors(image.get_pixel(x, bottom),  box_color):
 			skipped += 1
 			if skipped > SKIPPABLE_PIXEL_COUNT:
