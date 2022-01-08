@@ -3,11 +3,7 @@ extends Node2D
 
 var FUZZY_MATCH_DIFF = 0.34 #0.1
 var SKIPPABLE_PIXEL_COUNT = 8
-# Declare member variables here. Examples:
-# var a: int = 2
-# var b: String = "text"
-#var test_image = preload("res://test_images/page-07.png")
-#var test_image = preload("res://test_images/testtiny.png")
+
 var images = []
 var image_directory = Directory.new()
 var thread
@@ -24,13 +20,13 @@ var pixels_discarded_by_v_line_check := 0
 var outer_loops_discard := 0
 var inner_loops_discard := 0
 
-# Called when the node enters the scene tree for the first time.
+
 func _ready() -> void:
 	image_directory.open("res://trouble_pages")
 	image_directory.list_dir_begin(true)
 	thread = Thread.new()
 	thread.start(self, "_thread_function")
-	pass # Replace with function body.
+
 
 func _exit_tree() -> void:
 	thread.wait_to_finish()
@@ -73,16 +69,13 @@ func _find_some_dang_boxes(image: Image, min_box_dimension: int,
 	var iteration_end := Vector2(image.get_width(), image.get_height()) - min_box # exclusive
 	# Iterate over all pixels, y and x, ending at image size limits - min_box
 	_iterate_over_all_pixels(image, box_color, min_box, max_box, path_for_subimages, Vector2(0,0), iteration_end)
-	pass
 
 
 # Note that end is exclusive
 func _iterate_over_all_pixels(image: Image, box_color: Color, min_box: Vector2, 
 		max_box: Vector2, path_for_subimages: String, start: Vector2, end: Vector2) -> void:
 	for y in range(start.y, end.y):
-#		print(y)
 		for x in range(start.x, end.x):
-#			print(Vector2(x,y))
 			# Within each iteration:
 			# If not box_color, continue
 			if not _fuzzy_match_colors(image.get_pixel(x, y),  box_color):
@@ -107,38 +100,27 @@ func _iterate_over_all_pixels(image: Image, box_color: Color, min_box: Vector2,
 			)
 			# Do not look if too close to the edge
 			# TODO - does this ^^^ need a check?
-#			print(str(Vector2(x, y)) + " ? " + str(Vector2(x, y) + min_box))
-
-			
-			
 			# Do not search through more than the discovered largest borders
 #			var current_max_box = Vector2(min(max_box.x, valid_h_pixels), min(max_box.y, valid_v_pixels))
 			
 			_look_for_opposite_corners(image, box_color, path_for_subimages, Vector2(x, y), Vector2(x, y) + min_box, new_end)
-	pass
 
 
 func _look_for_opposite_corners(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, start: Vector2, end: Vector2) -> void:
 	# Within each iteration:
-#	print("looking for opposite corners...")
 	for y in range(start.y, end.y):
 		for x in range(start.x, end.x):
 			# If not box_color, continue
-#			print(image.get_pixel(x, y))
 			if not _fuzzy_match_colors(image.get_pixel(x, y),  box_color):
 				inner_loops_discard += 1
 				continue
-#			print("opposite corner found")
-#			print("Here at " + str(Vector2(x, y)))
 			# Else, we have two potential box corners: first_corner and second_corner
 			var second_corner = Vector2(x, y)
 			_check_if_corners_make_a_valid_rect(image, box_color, path_for_subimages, first_corner, second_corner)
 			if move_to_next_pixel:
 				move_to_next_pixel = false
 				return
-				
-	
-	pass
+
 
 func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_for_subimages: String, first_corner: Vector2, second_corner: Vector2) -> void:
 	# Get the four side values
@@ -152,15 +134,6 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 	for rect in list_of_rects:
 		if rect_to_check.intersects(rect, false):
 			return
-	
-#	print(str(left) + "|" + str(right) + "|" + str(top) + "|" + str(bottom))
-	# Check that each line is valid (image.get_pixel() == box_color) between the perpendicular limits
-	# If any are false, break the check and continue onto the next iteration
-	# Check left
-#	for y in range(top, bottom+1):
-#		if not _fuzzy_match_colors(image.get_pixel(left, y),  box_color):
-#			return
-	# Check right
 	var skipped = 0
 	for y in range(top, bottom+1):
 		if not _fuzzy_match_colors(image.get_pixel(right, y),  box_color):
@@ -169,11 +142,6 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 				return
 		else:
 			skipped = 0
-	# Check top
-#	for x in range(left, right+1):
-#		if not _fuzzy_match_colors(image.get_pixel(x, top),  box_color):
-#			return
-	# Check bottom
 	skipped = 0
 	for x in range(left, right+1):
 		if not _fuzzy_match_colors(image.get_pixel(x, bottom),  box_color):
@@ -186,7 +154,6 @@ func _check_if_corners_make_a_valid_rect(image: Image, box_color: Color, path_fo
 	# Check the inside for valid content
 	print("box border valid")
 	_check_that_box_content_is_valid(image, path_for_subimages, left, right, top, bottom)
-	pass
 
 
 func _check_that_box_content_is_valid(image: Image,	path_for_subimages: String, left: int, right: int, top: int, bottom: int) -> void:
@@ -202,8 +169,6 @@ func _check_that_box_content_is_valid(image: Image,	path_for_subimages: String, 
 	move_to_next_pixel = true
 	# Save the subimage, including the bordering box
 	_save_subimage(image, path_for_subimages, left, right, top, bottom)
-		
-	pass
 
 
 func _save_subimage(image: Image, path_for_subimages: String, left: int, right: int, top: int, bottom: int) -> void:
@@ -224,17 +189,13 @@ func _save_subimage(image: Image, path_for_subimages: String, left: int, right: 
 #	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
 #	image.save_png(path_for_subimages + "/" + str(image_counter) + "b.png")
 	image_counter += 1
-	
-	pass
 
 
-func _delete_subimage_from_working_image(image: Image, left: int, right: int, top: int, bottom: int) -> void:	
-	# Delete the subimage from the working image, including the bordering box only on the left and right
-	for y in range(top+1, bottom):
-		for x in range(left+1, right):
-			image.set_pixel(x, y, Color.transparent)
-	# Proceed to the next iteration	
-	pass
+#func _delete_subimage_from_working_image(image: Image, left: int, right: int, top: int, bottom: int) -> void:	
+#	# Delete the subimage from the working image, including the bordering box only on the left and right
+#	for y in range(top+1, bottom):
+#		for x in range(left+1, right):
+#			image.set_pixel(x, y, Color.transparent)
 
 
 func _fuzzy_match_colors(color1: Color, color2: Color) -> bool:
@@ -283,5 +244,4 @@ func _valid_consecutive_pixels_vertical(image: Image, color: Color, start: Vecto
 			skipped = 0
 		count += 1	
 	return count # should be equal to max_size
-
 
