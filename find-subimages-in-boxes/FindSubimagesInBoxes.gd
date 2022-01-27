@@ -5,6 +5,7 @@ var FUZZY_MATCH_DIFF = 0.34 #0.1
 var SKIPPABLE_PIXEL_COUNT = 8
 
 var images = []
+var image_names = []
 var image_directory = Directory.new()
 var thread
 var progress := Vector2(0,0)
@@ -22,7 +23,7 @@ var inner_loops_discard := 0
 
 
 func _ready() -> void:
-	image_directory.open("res://trouble_pages")
+	image_directory.open("res://pages")
 	image_directory.list_dir_begin(true)
 	thread = Thread.new()
 	thread.start(self, "_thread_function")
@@ -31,20 +32,25 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	thread.wait_to_finish()
 
+
+var name_count = 0
 func _thread_function():
 	# Load images
 	var next_image = image_directory.get_next()
 	while next_image != "":
 		if not next_image.ends_with("import"):
-			images.append(load("res://trouble_pages/" + next_image))
-			print(next_image)
+			images.append(load("res://pages/" + next_image))
+			image_names.append(next_image.left(next_image.length() - 4)) #subtract .png
 		next_image = image_directory.get_next()
 	# Call function
 	for i in images:
+		image_counter = 1
+		print(image_names[name_count])
 		i.lock()
 		_find_some_dang_boxes(i, 150, 16000, "user://test")
 		list_of_rects = []
 		i.unlock()
+		name_count += 1
 	print("Done")
 	print(program_timer)
 	print("Outer loop discards: " + str(outer_loops_discard))
@@ -178,10 +184,10 @@ func _save_subimage(image: Image, path_for_subimages: String, left: int, right: 
 	rect = rect.expand(Vector2(right, bottom))
 	var subimage := image.get_rect(rect)
 	# Save the image
-	var e = subimage.save_png(path_for_subimages + "/" + str(image_counter) + ".png")
+	var e = subimage.save_png(path_for_subimages + "/" + str(image_names[name_count]) + "-" + str(image_counter) + ".png")
 	print("Error: " + str(e))
 	print("Saved image.")
-	print(path_for_subimages + "/" + str(image_counter) + ".png")
+	print(path_for_subimages + "/" + str(image_names[name_count]) + "-" + str(image_counter) + ".png")
 	
 	# Delete the subimage from the working image, excluding the bordering box
 #	_delete_subimage_from_working_image(image, left, right, top, bottom)
